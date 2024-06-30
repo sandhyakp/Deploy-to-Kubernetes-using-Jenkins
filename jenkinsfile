@@ -32,5 +32,24 @@ pipeline {
                 }
             }
         }
+        stage('Update Manifests') {
+            steps {
+                script {
+                    sh "sed -i 's/image:.*/image: your-image-name:latest/' k8s/deployment.yaml"
+                    sh "git add k8s/deployment.yaml"
+                    sh "git commit -m 'Update image to latest'"
+                    sh "git push"
+                }
+            }
+        }
+        stage('Trigger Argo CD Sync') {
+            steps {
+                script {
+                    withCredentials([string(credentialsId: 'argocd-token', variable: 'ARGOCD_TOKEN')]) {
+                        sh 'argocd app sync my-app --auth-token ${ARGOCD_TOKEN}'
+                    }
+                }
+            }
+        }
     }
 }
